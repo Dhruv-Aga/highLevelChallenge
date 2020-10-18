@@ -16,10 +16,11 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
+// Name of Collection 
 const eventCollection = db.collection('events');
-const defaultTZ = 'Etc/GMT';
-process.env.TZ = defaultTZ;
-moment.tz.setDefault(defaultTZ);
+
+const defaultTZ = 'Etc/GMT'; // Default TimeZone
+
 const dateFormat = "YYYY-MM-DDTHH:mm:ssZ";
 const startHours = 10; // Number
 const startMinutes = 0; // Number
@@ -29,6 +30,11 @@ const endMinutes = 30; // Number
 
 const duration = 30; // In Minutes
 
+process.env.TZ = defaultTZ;
+moment.tz.setDefault(defaultTZ);
+
+// Create Slots according to Duration between given time period, 
+// and also format according to Specific TimeZone Passed
 const slotcreator = function (startDateTime, endDateTime, duration, timezone) {
     var allSlots = [];
     var tempDateTime = startDateTime;
@@ -40,6 +46,10 @@ const slotcreator = function (startDateTime, endDateTime, duration, timezone) {
     return allSlots
 }
 
+
+// Verifying slots that are on date provided, also remove
+// already occupied slots and also format according to 
+// Specific Global Format
 const verifySlots = function (slots, occupied, date) {
     var verifiedSlots = [];
     var lenSlots = slots.length;
@@ -74,16 +84,21 @@ const verifySlots = function (slots, occupied, date) {
     return verifiedSlots
 }
 
+// Converter from Moment DateTime Object to UNIX TimeStamp
+// used to store TimeStamp in Firestore
 const transformDateToTimestamp = function (dateTime) {
     dateTime = moment.tz(dateTime, defaultTZ).utc();
     dateTime = admin.firestore.Timestamp.fromMillis(dateTime.valueOf());
     return dateTime
 }
 
-
+// Converter from DateTime Object to Specific Time Zone
 const transformTimezone = function (timestamp, timezone) {
     return moment.tz(timestamp, timezone)
 }
+
+// Converter from UNIX TimeStamp used to store TimeStamp in 
+// Firestore to Moment DateTime Object
 const transformTimestampToDate = function (timestamp, timezone) {
     var date = new Date(timestamp.toDate())
     return moment.tz(date, timezone).clone().tz(timezone, true)
@@ -103,6 +118,7 @@ app.post('/api/event/create', (req, res) => {
             var newEvent = req.body.event;
             newEvent.slot = transformDateToTimestamp(newEvent.slot)
 
+            // To check if slot already exist in database
             var checkQuery = await eventCollection.where("slot", "==", newEvent.slot).get()
 
             if (checkQuery.empty) {
@@ -151,6 +167,7 @@ app.get('/api/event/slots', (req, res) => {
         var checkStartDate = transformDateToTimestamp(prevStartDateTime.clone().hour(0).minute(0).second(0))
         var checkEndDate = transformDateToTimestamp(nextEndDateTime.clone().hour(23).minute(59).second(59))
 
+        // To get all slot already present in database from a day previous to a day after
         var rangeQuery = await eventCollection.where("slot", ">=", checkStartDate).where("slot", "<=", checkEndDate).orderBy("slot").get()
         if (!rangeQuery.empty) {
             rangeQuery.forEach(dataValue => {
@@ -188,6 +205,7 @@ app.get('/api/event/', (req, res) => {
         startDate = transformDateToTimestamp(startDate)
         endDate = transformDateToTimestamp(endDate)
 
+        // To get all slot already present in database from a starting time a day to when it's end
         var rangeQuery = await eventCollection.where("slot", ">=", startDate).where("slot", "<=", endDate).orderBy("slot").get()
 
         if (rangeQuery.empty) {

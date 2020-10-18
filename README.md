@@ -67,6 +67,13 @@ If you need to update `npm`, you can make it using `npm`! Cool right? After runn
   - Configuring the Database
 
       1. Copy the `secret.json` from the firestore in directory `highLevelChallenge/function`
+      2. Copy the URL of your Database from the firestore setting into the file  `highLevelChallenge/function/index.js` at place of `databaseURL`
+      ```
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+            databaseURL: "https://gothic-space-174111.firebaseio.com"
+        });
+      ```
 
   - Running Scripts
 
