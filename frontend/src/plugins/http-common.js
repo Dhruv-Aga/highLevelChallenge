@@ -1,7 +1,8 @@
 import axios from 'axios'
 import store from '@/store'
 
-var baseURL = 'http://localhost:5001/gothic-space-174111/us-central/app/api'
+const firestoreInstancePart = 'gothic-space-174111/us-central'
+var baseURL = `http://localhost:5001/${firestoreInstancePart}/app/api`
 
 const instance = axios.create({
   baseURL: baseURL

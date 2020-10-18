@@ -41,14 +41,12 @@ const slotcreator = function (startDateTime, endDateTime, duration, timezone) {
 }
 
 const verifySlots = function (slots, occupied, date) {
-    // console.log(slots, occupied, date)
     var verifiedSlots = [];
     var lenSlots = slots.length;
     var lenOccupied = occupied.length;
     var i = j = 0;
 
     while (i < lenSlots && j < lenOccupied) {
-        console.log(slots[i] < occupied[j], slots[i], occupied[j], i, j)
         if (slots[i].format("YYYY-MM-DD") === date) {
             if (slots[i] < occupied[j]) {
                 verifiedSlots.push(slots[i].format(dateFormat));
@@ -95,7 +93,6 @@ const transformTimestampToDate = function (timestamp, timezone) {
 app.post('/api/event/create', (req, res) => {
     (async () => {
         try {
-            // console.log(req.body.event)
             if (!req.body.event)
                 return res.status(402).send({ "error": true, "msg": "Missing `event` in request data" });
             if (!req.body.event.slot)
@@ -117,7 +114,6 @@ app.post('/api/event/create', (req, res) => {
             }
 
         } catch (error) {
-            console.log(error);
             return res.status(500).send({ "error": true, "msg": error });
         }
     })();
@@ -126,7 +122,6 @@ app.post('/api/event/create', (req, res) => {
 // get all available slots
 app.get('/api/event/slots', (req, res) => {
     (async () => {
-        // console.log(req.query)
         if (!req.query.date) return res.status(402).send({ "error": true, "msg": "Missing date in request" });
         if (!req.query.timezone) return res.status(402).send({ "error": true, "msg": "Missing timezone in request" });
 
@@ -202,7 +197,6 @@ app.get('/api/event/', (req, res) => {
             rangeQuery.forEach(dataValue => {
                 dataValue = dataValue.data();
                 dataValue.slot = transformTimestampToDate(dataValue.slot, defaultTZ).format(dateFormat);
-                // console.log(dataValue.slot.tz())
                 dataValues.push(dataValue);
             })
             return res.status(200).send({
