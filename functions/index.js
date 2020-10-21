@@ -116,13 +116,31 @@ app.post('/api/event/create', (req, res) => {
                 return res.status(402).send({ "error": true, "msg": "Missing `duration` in request data" });
 
             var newEvent = req.body.event;
-            newEvent.slot = transformDateToTimestamp(newEvent.slot)
-
-            // To check if slot already exist in database
-            var checkQuery = await eventCollection.where("slot", "==", newEvent.slot).get()
+            var searchStart = transformTimezone(newEvent.slot, defaultTZ);
+            var searchEnd = searchStart.clone().add(newEvent.duration - 1, "minutes");
+            
+            newEvent.slot = transformTimezone(newEvent.slot, defaultTZ);
+            
+            var checkQuery = await eventCollection
+                                        .where("slot", ">=", searchStart)
+                                        .where("slot", "<=", searchEnd).get()
 
             if (checkQuery.empty) {
-                await eventCollection.add(newEvent);
+                var remaingSlotTime = newEvent.duration % duration
+                var noOfSlots = Math.floor(newEvent.duration/duration);
+                if(remaingSlotTime !== 0) {
+                    noOfSlots++;
+                }
+
+                const batch = db.batch();
+                
+                for (let slotNo = 0; slotNo < noOfSlots; slotNo++) {
+                    var newRef = eventCollection.doc();
+                    batch.set(newRef, {slot: transformDateToTimestamp(newEvent.slot.add(slotNo*duration, "minutes"))});
+                }
+
+                await batch.commit();
+
                 return res.status(200).send({ "error": false, "msg": "Slot successfully booked" });
 
             } else {
@@ -130,6 +148,7 @@ app.post('/api/event/create', (req, res) => {
             }
 
         } catch (error) {
+            console.log(error)
             return res.status(500).send({ "error": true, "msg": error });
         }
     })();
